@@ -1,5 +1,6 @@
 import { createApp, video, gradient, registerFont, setDefaultFigletFont } from '../../src/index'
 import fontAnsiShadow from 'figlet/importable-fonts/ANSI Shadow'
+import markup from './demo.coal?raw'
 
 // Register figlet fonts
 registerFont('ANSI Shadow', fontAnsiShadow)
@@ -14,67 +15,6 @@ const VIDEO_CATALOG: Record<string, string> = {
   mountains: './mountains.mp4',
   parkour: './parkour.mp4',
 }
-
-const markup = `
-sidebar width=20 align=left {
-  box valign=center padding=1 margin=1 background=dim(0.15) {
-    menu bind=currentBg {
-      - fire
-      - fireworks
-      - fireworks 2
-      - ink
-      - lightning
-      - mountains
-      - parkour
-      - rainbow
-      - ocean
-      - ember
-    }
-  }
-}
-
-{#if scene == "title"}
-  box align=center valign=center padding=2 margin=2 background=dim(0.25) {
-    # CHARCOAL
-
-    ---
-
-    A text UI framework for canvas.
-    Everything is characters on a grid.
-
-    [* credits *](-> goToCredits)
-  }
-{/if}
-
-{#if scene == "credits"}
-  box align=center valign=center width=52 padding=2 background=dim(0.15) {
-    ## Credits
-
-    ---
-
-    Charcoal is built on top of pretext,
-    a text layout library by Cheng Lou
-    that measures and positions text
-    without DOM queries.
-
-    pretext handles the hard parts:
-    character width measurement,
-    line breaking, and text shaping,
-    letting charcoal focus on the
-    grid-to-canvas rendering pipeline.
-
-    github.com/chenglou/pretext
-
-    ---
-
-    Made with figlet for ASCII art
-    headings and Baloo 2 for that
-    thick character density.
-
-    [* back *](-> goToTitle)
-  }
-{/if}
-`
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 
