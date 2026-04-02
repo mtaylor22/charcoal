@@ -131,10 +131,10 @@ export function createApp(markup: string, canvas: HTMLCanvasElement, options: Ap
       if (row >= region.top && row < region.bottom) {
         const visibleHeight = region.bottom - region.top
         const maxScroll = Math.max(0, region.contentHeight - visibleHeight)
-        const current = getScrollOffset(region.layoutNode)
+        const current = getScrollOffset(region.id)
         const next = Math.max(0, Math.min(maxScroll, current + Math.sign(e.deltaY)))
         if (next !== current) {
-          setScrollOffset(region.layoutNode, next)
+          setScrollOffset(region.id, next)
           // Re-emit cells with new scroll offset (no full relayout needed)
           const evaluatedAst = evaluateAst(ast, state)
           const { cols, rows } = { cols: renderer.cols, rows: renderer.rows }

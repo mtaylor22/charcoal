@@ -62,86 +62,87 @@ sidebar width=20 align=left {
 
 {#if scene == "syntax"}
   box align=center valign=center width=56 padding=2 background=dim(0.15) {
-    ## .coal Syntax
+    ## .coal Syntax Reference
 
     ---
 
     scroll height=20 {
-      ## Headings
+      ### Headings
+      Use one hash for large figlet titles,
+      two for bold section heads,
+      three for smaller bold text.
 
-      # h1 renders as figlet
-      ## h2 is BOLD UPPERCASE
-      ### h3 is regular bold
-
-      ---
-
-      ## Text Formatting
-
-      **bold text** renders at weight 800
-      *dim text* renders at reduced brightness
-      `code` renders in monospace
+      # Big
 
       ---
 
-      ## Blocks
+      ### Text
+      Wrap words in double stars for
+      **bold**, single stars for *dim*,
+      and backticks for `code`.
+
+      ---
+
+      ### Boxes & Containers
 
       box border=single padding=1 {
-        Boxes can have borders,
-        padding, margin, and
-        background modifiers.
+        border=single draws a frame.
+        Add padding, margin, width.
       }
-
-      ---
-
-      ## Buttons
-
-      [* click me *](-> goToTitle)
-
-      Buttons use the link syntax:
-      [label](-> actionName)
-
-      ---
-
-      ## Containers
 
       box background=dim(0.3) padding=1 {
-        background=dim(0.3) creates
-        a transparent overlay
+        background=dim(n) creates
+        a transparent overlay at
+        the given opacity level.
       }
 
       ---
 
-      ## Conditionals
+      ### Buttons
 
-      Use {#if key == "val"} and {/if}
-      to show content based on state.
+      [* like this one *](-> goToTitle)
 
-      ---
-
-      ## Menus
-
-      menu bind=stateKey {
-        - item one
-        - item two
-      }
-
-      Clicking sets the bound state key.
+      Syntax: [label](-> action)
+      The app handles the action.
 
       ---
 
-      ## Layout
+      ### Layout
 
       row gap=2 {
         box padding=1 background=dim(0.2) {
-          Rows split
+          row splits
         }
         box padding=1 background=dim(0.2) {
           horizontally
         }
       }
 
-      valign=center centers vertically.
-      align=center centers horizontally.
+      Use align=center, valign=center
+      for positioning within parents.
+
+      ---
+
+      ### Menus
+
+      Menus bind to state. Clicking
+      an item sets the bound key.
+
+      ---
+
+      ### Conditionals
+
+      Show or hide blocks based on
+      app state. Scenes, modals,
+      and tabs are all built this way.
+
+      ---
+
+      ### Scroll
+
+      This pane is a scroll block!
+      Set height=N to clip content
+      and enable wheel scrolling.
     }
 
     [* back *](-> goToTitle)
