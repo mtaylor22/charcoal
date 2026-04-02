@@ -221,11 +221,11 @@ export class Renderer {
       if (cell.font.includes('dim')) lBoost = -0.1
       if (cell.font.includes('heading')) {
         lBoost = 0.2
-        // Shimmer: a bright desaturated highlight that sweeps across the heading
-        const wave = Math.sin(cell.col * 0.08 - time * 0.002)
-        const shimmer = Math.pow(Math.max(0, wave), 4)
-        lBoost += shimmer * 0.6  // push well past normal cap
-        sBoost = -shimmer * 0.8  // desaturate toward white in the shimmer band
+        // Shimmer: diagonal bright sweep across the heading
+        const wave = Math.sin((cell.col + cell.row * 2) * 0.06 - time * 0.0025)
+        const shimmer = Math.pow(Math.max(0, wave), 3)
+        lBoost += shimmer * 0.8
+        sBoost = -shimmer * 1.0
       }
       if (cell.interactive?.hovered) lBoost += 0.1
 
