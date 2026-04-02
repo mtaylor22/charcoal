@@ -217,18 +217,23 @@ export class Renderer {
 
       // Content uses same base color as background but boosted to stand out
       let lBoost = 0.15
+      let sBoost = 0
       if (cell.font.includes('dim')) lBoost = -0.1
       if (cell.font.includes('heading')) {
         lBoost = 0.2
-        // Shimmer on headings — a bright highlight that sweeps across
+        // Shimmer: a bright desaturated highlight that sweeps across the heading
         const wave = Math.sin(cell.col * 0.08 - time * 0.002)
-        const headingShimmer = Math.pow(Math.max(0, wave), 4) * 0.5
-        lBoost += headingShimmer
+        const shimmer = Math.pow(Math.max(0, wave), 4)
+        lBoost += shimmer * 0.6  // push well past normal cap
+        sBoost = -shimmer * 0.8  // desaturate toward white in the shimmer band
       }
       if (cell.interactive?.hovered) lBoost += 0.1
 
-      const contentL = Math.min(0.85, (l * 1.4 + 0.15) + lBoost)
-      const contentS = Math.min(1, s * 1.3)
+      const baseL = (l * 1.4 + 0.15) + lBoost
+      // Headings allowed to go brighter (up to 1.0) for shimmer effect
+      const isHeading = cell.font.includes('heading')
+      const contentL = isHeading ? Math.min(1.0, baseL) : Math.min(0.85, baseL)
+      const contentS = Math.min(1, Math.max(0, s * 1.3 + sBoost))
 
       ctx.font = `${weight} ${this.options.fontSize}px "Courier New", Courier, monospace`
       ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, contentS * 100)}%, ${Math.min(100, contentL * 100)}%)`
