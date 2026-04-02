@@ -186,13 +186,20 @@ export class Renderer {
           continue
         }
 
-        // Normal background cell
-        const brightness = 0.299 * r + 0.587 * g + 0.114 * b
+        // Normal background cell with shimmer
+        // Subtle traveling wave of brightness
+        const shimmer = Math.sin(col * 0.15 + row * 0.08 - time * 0.0008) * 0.06 +
+                        Math.sin(col * 0.07 - row * 0.12 + time * 0.0005) * 0.04
+        const sr = Math.max(0, Math.min(255, r + r * shimmer))
+        const sg = Math.max(0, Math.min(255, g + g * shimmer))
+        const sb = Math.max(0, Math.min(255, b + b * shimmer))
+
+        const brightness = 0.299 * sr + 0.587 * sg + 0.114 * sb
         const brightnessByte = Math.min(255, brightness | 0)
         const entry = lookup[brightnessByte]
         if (!entry || entry.char === ' ') continue
 
-        const [h, s, l] = rgbToHsl(r, g, b)
+        const [h, s, l] = rgbToHsl(sr, sg, sb)
         ctx.font = entry.font
         ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, s * 120)}%, ${Math.min(100, (l * 1.4 + 0.15) * 100)}%)`
         ctx.fillText(entry.char, col * cellW, y)
@@ -218,7 +225,12 @@ export class Renderer {
       // Content uses same base color as background but boosted to stand out
       let lBoost = 0.15
       if (cell.font.includes('dim')) lBoost = -0.1
-      if (cell.font.includes('heading')) lBoost = 0.25
+      if (cell.font.includes('heading')) {
+        lBoost = 0.25
+        // Shimmer on headings — a bright highlight that sweeps across
+        const headingShimmer = Math.pow(Math.max(0, Math.sin(cell.col * 0.12 - time * 0.0012)), 8) * 0.25
+        lBoost += headingShimmer
+      }
       if (cell.interactive?.hovered) lBoost += 0.1
 
       const contentL = Math.min(0.85, (l * 1.4 + 0.15) + lBoost)
