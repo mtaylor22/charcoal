@@ -215,29 +215,24 @@ export class Renderer {
       else if (cell.font.includes('700')) weight = '700'
       else if (cell.font.includes('600')) weight = '600'
 
+      // Shimmer: diagonal sweep with bright peaks AND dark valleys
+      const jitter = Math.sin(cell.col * 7.3 + cell.row * 13.7) * 0.3
+      const wave = Math.sin((cell.col + cell.row * 2) * 0.06 + jitter - time * 0.0025)
+      const bright = Math.pow(Math.max(0, wave), 3)
+      const dark = Math.pow(Math.max(0, -wave), 2)
+
+      const isHeading = cell.font.includes('heading')
+      const shimmerScale = isHeading ? 1.0 : 0.5  // headings shimmer stronger
+
       // Content uses same base color as background but boosted to stand out
-      let lBoost = 0.15
-      let sBoost = 0
-      if (cell.font.includes('dim')) lBoost = -0.1
-      if (cell.font.includes('heading')) {
-        lBoost = 0.2
-        // Shimmer: diagonal sweep with bright peaks AND dark valleys
-        // Add jitter per-character so it feels organic, not synthetic
-        const jitter = Math.sin(cell.col * 7.3 + cell.row * 13.7) * 0.3 // stable per-cell noise
-        const wave = Math.sin((cell.col + cell.row * 2) * 0.06 + jitter - time * 0.0025)
-        // Bright peaks
-        const bright = Math.pow(Math.max(0, wave), 3)
-        // Dark valleys
-        const dark = Math.pow(Math.max(0, -wave), 2)
-        lBoost += bright * 0.8 - dark * 0.35
-        sBoost = -bright * 1.0 + dark * 0.3
-      }
+      let lBoost = 0.15 + bright * 0.8 * shimmerScale - dark * 0.35 * shimmerScale
+      let sBoost = -bright * 1.0 * shimmerScale + dark * 0.3 * shimmerScale
+      if (cell.font.includes('dim')) { lBoost = -0.1; sBoost = 0 }
+      if (isHeading) lBoost += 0.05
       if (cell.interactive?.hovered) lBoost += 0.1
 
       const baseL = (l * 1.4 + 0.15) + lBoost
-      // Headings allowed to go brighter (up to 1.0) for shimmer effect
-      const isHeading = cell.font.includes('heading')
-      const contentL = isHeading ? Math.min(1.0, baseL) : Math.min(0.85, baseL)
+      const contentL = Math.min(1.0, baseL)
       const contentS = Math.min(1, Math.max(0, s * 1.3 + sBoost))
 
       ctx.font = `${weight} ${this.options.fontSize}px "Courier New", Courier, monospace`
