@@ -181,15 +181,14 @@ export class Renderer {
       else if (cell.font.includes('700')) weight = '700'
       else if (cell.font.includes('600')) weight = '600'
 
-      // Content uses same color formula as background chars but slightly boosted
-      // to stand out, and uses monospace font for readability
-      let lBoost = 0.3  // extra lightness to make content pop over background
-      if (cell.font.includes('dim')) lBoost = 0.0
-      if (cell.font.includes('heading')) lBoost = 0.4
-      if (cell.interactive?.hovered) lBoost += 0.15
+      // Content uses same base color as background but boosted to stand out
+      let lBoost = 0.15
+      if (cell.font.includes('dim')) lBoost = -0.1
+      if (cell.font.includes('heading')) lBoost = 0.25
+      if (cell.interactive?.hovered) lBoost += 0.1
 
-      const contentL = Math.min(1, (l * 1.4 + 0.15) + lBoost)
-      const contentS = Math.min(1, s * 1.2)
+      const contentL = Math.min(0.85, (l * 1.4 + 0.15) + lBoost)
+      const contentS = Math.min(1, s * 1.3)
 
       ctx.font = `${weight} ${this.options.fontSize}px "Courier New", Courier, monospace`
       ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, contentS * 100)}%, ${Math.min(100, contentL * 100)}%)`
