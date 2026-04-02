@@ -165,15 +165,16 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
     case 'heading': {
       const heading = node as HeadingNode
       if (heading.level <= 2) {
-        // Render as figlet ASCII art
+        // Render as figlet ASCII art, centered within available width
         const block = renderFiglet(heading.content, heading.font)
+        const offsetX = Math.max(0, Math.floor((width - block.width) / 2))
         for (let lineIdx = 0; lineIdx < block.lines.length; lineIdx++) {
           const line = block.lines[lineIdx]!
           for (let charIdx = 0; charIdx < line.length; charIdx++) {
             const ch = line[charIdx]!
             if (ch === ' ') continue
             cells.push({
-              col: col + charIdx,
+              col: col + offsetX + charIdx,
               row: row + lineIdx,
               char: ch,
               font: '800 heading',
