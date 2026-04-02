@@ -69,6 +69,7 @@ export type BoxNode = {
     padding?: number
     background?: string
     font?: string
+    valign?: 'top' | 'center' | 'bottom'
   }
   children: AstNode[]
 }

@@ -109,6 +109,8 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
       if (hasBorder) boxHeight += 2
       boxHeight += padding * 2
       if (box.props.height != null) boxHeight = box.props.height
+      // Fill available height when valign is set (needs room to center/bottom)
+      if (box.props.valign && box.props.height == null) boxHeight = Math.max(boxHeight, availHeight)
 
       return {
         node,
@@ -373,7 +375,19 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
       innerRow += padding
 
       const innerWidth = layoutNode.children.length > 0 ? layoutNode.children[0]!.width : 0
+
+      // Vertical alignment
       let cursorRow = innerRow
+      if (box.props.valign === 'center') {
+        const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
+        const innerHeight = layoutNode.height - (hasBorder ? 2 : 0) - padding * 2
+        cursorRow += Math.floor((innerHeight - contentHeight) / 2)
+      } else if (box.props.valign === 'bottom') {
+        const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
+        const innerHeight = layoutNode.height - (hasBorder ? 2 : 0) - padding * 2
+        cursorRow += innerHeight - contentHeight
+      }
+
       for (const child of layoutNode.children) {
         assignPositions(child, innerCol, cursorRow, innerWidth)
         cursorRow += child.height
