@@ -50,9 +50,16 @@ export class InteractionManager {
   click(col: number, row: number): void {
     const hit = this.hitTest(col, row)
     if (!hit) return
+    // Exact match
     const handlers = this.handlers.get(hit.action)
     if (handlers) {
-      for (const cb of handlers) cb()
+      for (const cb of handlers) cb(hit.action)
+    }
+    // Prefix match for wildcard handlers (e.g., 'menu-select:*')
+    for (const [pattern, cbs] of this.handlers) {
+      if (pattern.endsWith(':*') && hit.action.startsWith(pattern.slice(0, -1))) {
+        for (const cb of cbs) cb(hit.action)
+      }
     }
   }
 

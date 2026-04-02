@@ -233,11 +233,14 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
 
     case 'menu': {
       const menu = node as MenuNode
+      const bindKey = menu.props.bind ?? ''
       for (let idx = 0; idx < children.length; idx++) {
         const child = children[idx]!
         const childNode = child.node as ListItemNode
         const menuId = `menu-${idx}`
-        const interactive = { id: menuId, action: 'menu-select', hovered: false }
+        const itemValue = childNode.content
+        const action = bindKey ? `menu-select:${bindKey}:${itemValue}` : 'menu-select'
+        const interactive = { id: menuId, action, hovered: false }
 
         // Emit bullet
         cells.push({ col: child.col, row: child.row, char: '•', font: '400 normal', interactive })

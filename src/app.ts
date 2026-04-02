@@ -120,6 +120,17 @@ export function createApp(markup: string, canvas: HTMLCanvasElement, options: Ap
   // Resize handler
   window.addEventListener('resize', () => relayout())
 
+  // Built-in menu selection handler
+  events.on('menu-select:*', (action: string) => {
+    // action format: menu-select:bindKey:value
+    const parts = action.split(':')
+    if (parts.length >= 3) {
+      const bindKey = parts[1]!
+      const value = parts.slice(2).join(':') // value may contain colons
+      state.set(bindKey, value)
+    }
+  })
+
   // State changes trigger relayout
   state.onChange(() => relayout())
 
