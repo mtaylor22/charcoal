@@ -30,6 +30,7 @@ document.fonts.ready.then(() => {
   app.state.set('currentBg', 'fire')
 
   app.on('goToCredits', () => app.state.set('scene', 'credits'))
+  app.on('goToSyntax', () => app.state.set('scene', 'syntax'))
   app.on('goToTitle', () => app.state.set('scene', 'title'))
   app.on('backdrop-click', () => {
     if (app.state.get('scene') !== 'title') {
