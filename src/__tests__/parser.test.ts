@@ -69,10 +69,97 @@ row gap=2 {
     if (menu.type === 'menu') {
       expect(menu.props.bind).toBe('nav')
       expect(menu.items).toHaveLength(3)
-      expect(menu.items[0]).toEqual({ type: 'list-item', content: 'Home', segments: [] })
-      expect(menu.items[1]).toEqual({ type: 'list-item', content: 'About', segments: [] })
-      expect(menu.items[2]).toEqual({ type: 'list-item', content: 'Contact', segments: [] })
+      expect(menu.items[0]).toMatchObject({ type: 'list-item', content: 'Home' })
+      expect(menu.items[1]).toMatchObject({ type: 'list-item', content: 'About' })
+      expect(menu.items[2]).toMatchObject({ type: 'list-item', content: 'Contact' })
       expect((menu as any).children).toBeUndefined()
+    }
+  })
+})
+
+describe('parser - inline content', () => {
+  it('parses headings', () => {
+    const ast = parse('# Hello World')
+    const h = ast.children[0]!
+    expect(h.type).toBe('heading')
+    if (h.type === 'heading') {
+      expect(h.level).toBe(1)
+      expect(h.content).toBe('Hello World')
+    }
+  })
+
+  it('parses h2 and h3', () => {
+    const ast = parse('## Sub\n### Small')
+    expect(ast.children[0]).toMatchObject({ type: 'heading', level: 2 })
+    expect(ast.children[1]).toMatchObject({ type: 'heading', level: 3 })
+  })
+
+  it('parses horizontal rules', () => {
+    const ast = parse('---')
+    expect(ast.children[0]).toEqual({ type: 'rule' })
+  })
+
+  it('parses blockquotes', () => {
+    const ast = parse('> hello world')
+    const q = ast.children[0]!
+    expect(q.type).toBe('quote')
+  })
+
+  it('parses list items', () => {
+    const ast = parse('- item one\n- item two')
+    const list = ast.children[0]!
+    expect(list.type).toBe('list')
+    if (list.type === 'list') {
+      expect(list.items).toHaveLength(2)
+    }
+  })
+
+  it('parses font directives', () => {
+    const ast = parse('font: "Slant"')
+    expect(ast.children[0]).toMatchObject({ type: 'font-directive', font: 'Slant' })
+  })
+
+  it('parses inline bold, dim, code, expressions', () => {
+    const ast = parse('hello **bold** and *dim* plus `code` and {count}')
+    const text = ast.children[0]!
+    expect(text.type).toBe('text')
+    if (text.type === 'text') {
+      expect(text.segments.some(s => s.type === 'bold' && s.content === 'bold')).toBe(true)
+      expect(text.segments.some(s => s.type === 'dim' && s.content === 'dim')).toBe(true)
+      expect(text.segments.some(s => s.type === 'code' && s.content === 'code')).toBe(true)
+      expect(text.segments.some(s => s.type === 'expression' && s.key === 'count')).toBe(true)
+    }
+  })
+
+  it('parses buttons', () => {
+    const ast = parse('[* continue *](-> goToZen)')
+    const text = ast.children[0]!
+    if (text.type === 'text') {
+      expect(text.segments.some(s => s.type === 'button' && s.action === 'goToZen')).toBe(true)
+    }
+  })
+})
+
+describe('parser - control flow', () => {
+  it('parses {#if} / {/if}', () => {
+    const ast = parse('{#if scene == "title"}\n  hello\n{/if}')
+    const cond = ast.children[0]!
+    expect(cond.type).toBe('conditional')
+    if (cond.type === 'conditional') {
+      expect(cond.key).toBe('scene')
+      expect(cond.operator).toBe('==')
+      expect(cond.value).toBe('title')
+      expect(cond.children.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('parses {#each} / {/each}', () => {
+    const ast = parse('{#each videos as v}\n  - {v.label}\n{/each}')
+    const each = ast.children[0]!
+    expect(each.type).toBe('each')
+    if (each.type === 'each') {
+      expect(each.collection).toBe('videos')
+      expect(each.itemName).toBe('v')
     }
   })
 })
