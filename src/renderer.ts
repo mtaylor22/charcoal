@@ -165,7 +165,7 @@ export class Renderer {
       }
     }
 
-    // Second pass: draw content cells (on top, brighter to stand out)
+    // Second pass: draw content cells (on top, using same color formula but monospace + boosted)
     for (const cell of cells) {
       if (cell.char === ' ') continue
 
@@ -175,23 +175,24 @@ export class Renderer {
       const [r, g, b] = background.sample(cell.col, cell.row, time)
       const [h, s, l] = rgbToHsl(r, g, b)
 
-      // Determine weight and brightness multiplier from cell.font marker
+      // Determine weight from cell.font marker
       let weight = '400'
-      let brightnessMul = 1.0
       if (cell.font.includes('bold') || cell.font.includes('800')) weight = '800'
       else if (cell.font.includes('700')) weight = '700'
       else if (cell.font.includes('600')) weight = '600'
-      if (cell.font.includes('dim')) brightnessMul = 0.5
-      if (cell.font.includes('heading')) brightnessMul = 1.8
 
-      if (cell.interactive?.hovered) brightnessMul *= 1.3
+      // Content uses same color formula as background chars but slightly boosted
+      // to stand out, and uses monospace font for readability
+      let lBoost = 0.3  // extra lightness to make content pop over background
+      if (cell.font.includes('dim')) lBoost = 0.0
+      if (cell.font.includes('heading')) lBoost = 0.4
+      if (cell.interactive?.hovered) lBoost += 0.15
 
-      // Use the original demo's vivid color formula, boosted for content
-      const boostedL = Math.min(1, (l * 1.8 + 0.3) * brightnessMul)
-      const boostedS = Math.min(1, s * 1.5)
+      const contentL = Math.min(1, (l * 1.4 + 0.15) + lBoost)
+      const contentS = Math.min(1, s * 1.2)
 
-      ctx.font = `${weight} ${this.options.fontSize}px ${this.options.fontFamily}`
-      ctx.fillStyle = `hsl(${h * 360}, ${boostedS * 100}%, ${boostedL * 100}%)`
+      ctx.font = `${weight} ${this.options.fontSize}px "Courier New", Courier, monospace`
+      ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, contentS * 100)}%, ${Math.min(100, contentL * 100)}%)`
       ctx.fillText(cell.char, x, y)
     }
   }

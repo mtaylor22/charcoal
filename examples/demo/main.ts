@@ -107,22 +107,25 @@ sidebar width=15 align=left {
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 
-const app = createApp(markup, canvas, {
-  background: video(VIDEO_CATALOG['fire']!, { mode: 'cover' }),
-  fontSize: 14,
-  fontFamily: '"Courier New", Courier, monospace',
+// Wait for Baloo 2 font to load before starting (palette needs accurate glyph measurements)
+document.fonts.ready.then(() => {
+  const app = createApp(markup, canvas, {
+    background: video(VIDEO_CATALOG['fire']!, { mode: 'cover' }),
+    fontSize: 14,
+    fontFamily: '"Baloo 2", cursive',
+  })
+
+  app.state.set('scene', 'title')
+  app.state.set('currentVideo', 'fire')
+
+  app.on('goToZen', () => app.state.set('scene', 'zen'))
+  app.on('goToScroll', () => app.state.set('scene', 'scroll'))
+  app.on('goToTitle', () => app.state.set('scene', 'title'))
+
+  app.state.watch('currentVideo', (v: string) => {
+    const src = VIDEO_CATALOG[v]
+    if (src) app.setBackground(video(src, { mode: 'cover' }))
+  })
+
+  app.start()
 })
-
-app.state.set('scene', 'title')
-app.state.set('currentVideo', 'fire')
-
-app.on('goToZen', () => app.state.set('scene', 'zen'))
-app.on('goToScroll', () => app.state.set('scene', 'scroll'))
-app.on('goToTitle', () => app.state.set('scene', 'title'))
-
-app.state.watch('currentVideo', (v: string) => {
-  const src = VIDEO_CATALOG[v]
-  if (src) app.setBackground(video(src, { mode: 'cover' }))
-})
-
-app.start()
