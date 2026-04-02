@@ -16,5 +16,8 @@ export type { Cell } from './types'
 // AST (for advanced usage)
 export type { RootNode, AstNode } from './ast'
 
+// Figlet
+export { registerFont, setDefaultFigletFont } from './figlet'
+
 // Parser (for advanced usage)
 export { parse } from './parser'

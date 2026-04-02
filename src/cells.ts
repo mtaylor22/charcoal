@@ -13,6 +13,7 @@ import type {
   BoxNode,
   TextSegment,
 } from './ast'
+import { renderFiglet } from './figlet'
 
 // --- Word-wrap helper (mirrors layout.ts logic) ---
 
@@ -163,19 +164,32 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
 
     case 'heading': {
       const heading = node as HeadingNode
-      const fontMap: Record<number, string> = {
-        1: '800 heading',
-        2: '700 heading',
-        3: '600 heading',
-      }
-      const font = fontMap[heading.level] ?? '800 heading'
-      for (let i = 0; i < heading.content.length; i++) {
-        cells.push({
-          col: col + i,
-          row,
-          char: heading.content[i]!,
-          font,
-        })
+      if (heading.level <= 2) {
+        // Render as figlet ASCII art
+        const block = renderFiglet(heading.content, heading.font)
+        for (let lineIdx = 0; lineIdx < block.lines.length; lineIdx++) {
+          const line = block.lines[lineIdx]!
+          for (let charIdx = 0; charIdx < line.length; charIdx++) {
+            const ch = line[charIdx]!
+            if (ch === ' ') continue
+            cells.push({
+              col: col + charIdx,
+              row: row + lineIdx,
+              char: ch,
+              font: '800 heading',
+            })
+          }
+        }
+      } else {
+        // h3: plain bold text
+        for (let i = 0; i < heading.content.length; i++) {
+          cells.push({
+            col: col + i,
+            row,
+            char: heading.content[i]!,
+            font: '600 heading',
+          })
+        }
       }
       break
     }

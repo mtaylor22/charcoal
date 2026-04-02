@@ -20,6 +20,7 @@ import type {
   ConditionalNode,
   EachNode,
 } from './ast'
+import { renderFiglet } from './figlet'
 
 export type LayoutNode = {
   node: AstNode
@@ -77,7 +78,7 @@ function getChildren(node: AstNode): AstNode[] {
 
 // --- Pass 1: Size Resolution ---
 
-function resolveSize(node: AstNode, availWidth: number, availHeight: number, parentNode?: AstNode, siblingIndex?: number, siblings?: AstNode[]): LayoutNode {
+function resolveSize(node: AstNode, availWidth: number, availHeight: number, parentNode?: AstNode, siblingIndex?: number, siblings?: AstNode[], figletFont?: string): LayoutNode {
   switch (node.type) {
     case 'root': {
       const root = node as RootNode
@@ -102,7 +103,8 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
       if (hasBorder) innerWidth -= 2
       innerWidth -= padding * 2
 
-      const children = box.children.map(c => resolveSize(c, innerWidth, availHeight))
+      const boxFigletFont = (box.props.font as string) ?? figletFont
+      const children = box.children.map(c => resolveSize(c, innerWidth, availHeight, undefined, undefined, undefined, boxFigletFont))
       const childrenHeight = children.reduce((sum, c) => sum + c.height, 0)
 
       let boxHeight = childrenHeight
@@ -171,7 +173,8 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
 
     case 'scroll': {
       const scroll = node as ScrollNode
-      const children = scroll.children.map(c => resolveSize(c, availWidth, scroll.props.height))
+      // Children compute full height (not clipped) — clipping happens in cell emitter
+      const children = scroll.children.map(c => resolveSize(c, availWidth, 9999, undefined, undefined, undefined, figletFont))
       return {
         node,
         col: 0,
@@ -196,6 +199,20 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
     }
 
     case 'heading': {
+      const heading = node as HeadingNode
+      // h1 and h2 use figlet, h3 is plain bold
+      if (heading.level <= 2) {
+        const font = heading.font ?? figletFont
+        const block = renderFiglet(heading.content, font)
+        return {
+          node,
+          col: 0,
+          row: 0,
+          width: Math.min(block.width, availWidth),
+          height: block.height,
+          children: [],
+        }
+      }
       return {
         node,
         col: 0,

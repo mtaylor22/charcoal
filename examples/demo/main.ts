@@ -1,4 +1,9 @@
-import { createApp, video, gradient } from '../../src/index'
+import { createApp, video, gradient, registerFont, setDefaultFigletFont } from '../../src/index'
+import fontAnsiShadow from 'figlet/importable-fonts/ANSI Shadow'
+
+// Register figlet fonts
+registerFont('ANSI Shadow', fontAnsiShadow)
+setDefaultFigletFont('ANSI Shadow')
 
 const VIDEO_CATALOG: Record<string, string> = {
   fire: './13717343_2048_1080_30fps.mp4',
