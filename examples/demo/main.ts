@@ -39,68 +39,34 @@ sidebar width=20 align=left {
     A text UI framework for canvas.
     Everything is characters on a grid.
 
-    row gap=4 align=center {
-      [* continue *](-> goToZen)
-      [* scroll *](-> goToScroll)
-    }
+    [* credits *](-> goToCredits)
   }
 {/if}
 
-{#if scene == "zen"}
-  box align=center valign=center width=60 padding=2 background=dim(0.15) {
-    ## The Zen of Python, by Tim Peters
+{#if scene == "credits"}
+  box align=center valign=center width=52 padding=2 background=dim(0.15) {
+    ## Credits
 
     ---
 
-    > Beautiful is better than ugly.
-    > Explicit is better than implicit.
-    > Simple is better than complex.
-    > Complex is better than complicated.
-    > Flat is better than nested.
-    > Sparse is better than dense.
-    > Readability counts.
-    > Special cases aren't special enough to break the rules.
-    > Although practicality beats purity.
-    > Errors should never pass silently.
-    > Unless explicitly silenced.
-    > In the face of ambiguity, refuse the temptation to guess.
-    > There should be one obvious way to do it.
-    > Now is better than never.
-    > Although never is often better than right now.
-    > If the implementation is hard to explain, it's a bad idea.
-    > If the implementation is easy to explain, it may be a good idea.
-    > Namespaces are one honking great idea.
+    Charcoal is built on top of pretext,
+    a text layout library by Cheng Lou
+    that measures and positions text
+    without DOM queries.
 
-    [* back *](-> goToTitle)
-  }
-{/if}
+    pretext handles the hard parts:
+    character width measurement,
+    line breaking, and text shaping,
+    letting charcoal focus on the
+    grid-to-canvas rendering pipeline.
 
-{#if scene == "scroll"}
-  box align=center valign=center width=45 padding=2 background=dim(0.15) {
-    ## Scrollable Pane
+    github.com/chenglou/pretext
 
     ---
 
-    scroll height=14 {
-      > Beautiful is better than ugly.
-      > Explicit is better than implicit.
-      > Simple is better than complex.
-      > Complex is better than complicated.
-      > Flat is better than nested.
-      > Sparse is better than dense.
-      > Readability counts.
-      > Special cases aren't special enough to break the rules.
-      > Although practicality beats purity.
-      > Errors should never pass silently.
-      > Unless explicitly silenced.
-      > In the face of ambiguity, refuse the temptation to guess.
-      > There should be one obvious way to do it.
-      > Now is better than never.
-      > Although never is often better than right now.
-      > If the implementation is hard to explain, it's a bad idea.
-      > If the implementation is easy to explain, it may be a good idea.
-      > Namespaces are one honking great idea.
-    }
+    Made with figlet for ASCII art
+    headings and Baloo 2 for that
+    thick character density.
 
     [* back *](-> goToTitle)
   }
@@ -120,8 +86,7 @@ document.fonts.ready.then(() => {
   app.state.set('scene', 'title')
   app.state.set('currentVideo', 'fire')
 
-  app.on('goToZen', () => app.state.set('scene', 'zen'))
-  app.on('goToScroll', () => app.state.set('scene', 'scroll'))
+  app.on('goToCredits', () => app.state.set('scene', 'credits'))
   app.on('goToTitle', () => app.state.set('scene', 'title'))
 
   app.state.watch('currentVideo', (v: string) => {
