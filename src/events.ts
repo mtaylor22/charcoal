@@ -63,6 +63,13 @@ export class InteractionManager {
     }
   }
 
+  fireAction(action: string): void {
+    const handlers = this.handlers.get(action)
+    if (handlers) {
+      for (const cb of handlers) cb(action)
+    }
+  }
+
   on(action: string, cb: (...args: any[]) => void): () => void {
     if (!this.handlers.has(action)) this.handlers.set(action, new Set())
     this.handlers.get(action)!.add(cb)

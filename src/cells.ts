@@ -106,8 +106,8 @@ function emitSegmentCells(
         font = '400 normal'
         break
       case 'button':
-        text = seg.label
-        font = '400 normal'
+        text = `[ ${seg.label} ]`
+        font = '800 bold'
         interactive = { id: nextButtonId(), action: seg.action, hovered: false }
         break
       default:

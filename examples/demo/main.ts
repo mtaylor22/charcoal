@@ -31,7 +31,7 @@ sidebar width=20 align=left {
 }
 
 {#if scene == "title"}
-  box align=center valign=center padding=2 background=dim(0.25) {
+  box align=center valign=center padding=2 margin=2 background=dim(0.25) {
     # CHARCOAL
 
     ---
@@ -88,6 +88,11 @@ document.fonts.ready.then(() => {
 
   app.on('goToCredits', () => app.state.set('scene', 'credits'))
   app.on('goToTitle', () => app.state.set('scene', 'title'))
+  app.on('backdrop-click', () => {
+    if (app.state.get('scene') !== 'title') {
+      app.state.set('scene', 'title')
+    }
+  })
 
   app.state.watch('currentVideo', (v: string) => {
     const src = VIDEO_CATALOG[v]

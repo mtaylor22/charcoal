@@ -104,7 +104,13 @@ export function createApp(markup: string, canvas: HTMLCanvasElement, options: Ap
 
   canvas.addEventListener('click', (e) => {
     const { col, row } = getGridCoords(e)
-    events.click(col, row)
+    const hit = events.hitTest(col, row)
+    if (hit) {
+      events.click(col, row)
+    } else {
+      // No interactive cell hit — fire backdrop-click
+      events.fireAction('backdrop-click')
+    }
   })
 
   // Touch support
