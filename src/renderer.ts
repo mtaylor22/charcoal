@@ -1,6 +1,7 @@
 import type { Cell } from './types'
 import type { Background } from './background'
 import { rgbToHsl } from './palette'
+import { prepareWithSegments } from '@chenglou/pretext'
 
 export interface RendererOptions {
   fontSize: number
@@ -13,6 +14,7 @@ const WEIGHTS = [400, 600, 800] as const
 
 type PaletteEntry = {
   char: string
+  width: number
   brightness: number
   font: string
 }
@@ -66,9 +68,12 @@ export class Renderer {
       const font = `${weight} ${fontSize}px ${fontFamily}`
       for (const ch of CHARSET) {
         if (ch === ' ') continue
+        const prepared = prepareWithSegments(ch, font)
+        const width = prepared.widths.length > 0 ? prepared.widths[0]! : 0
+        if (width <= 0) continue
         const brightness = this.estimateBrightness(ch, font)
         if (brightness > 0) {
-          palette.push({ char: ch, brightness, font })
+          palette.push({ char: ch, width, brightness, font })
         }
       }
     }
@@ -101,7 +106,8 @@ export class Renderer {
       for (let i = start; i < end; i++) {
         const e = palette[i]!
         const bErr = Math.abs(e.brightness - targetB) * 2
-        if (bErr < bestScore) { bestScore = bErr; best = e }
+        const wErr = Math.abs(e.width - this.cellW) / Math.max(this.cellW, 1)
+        if (bErr + wErr < bestScore) { bestScore = bErr + wErr; best = e }
       }
       this.lookup.push({ char: best.char, font: best.font })
     }
