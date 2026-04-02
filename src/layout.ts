@@ -200,8 +200,8 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
 
     case 'heading': {
       const heading = node as HeadingNode
-      // h1 and h2 use figlet, h3 is plain bold
-      if (heading.level <= 2) {
+      // Only h1 uses figlet
+      if (heading.level === 1) {
         const font = heading.font ?? figletFont
         const block = renderFiglet(heading.content, font)
         return {
@@ -213,6 +213,7 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
           children: [],
         }
       }
+      // h2 and h3: single line
       return {
         node,
         col: 0,

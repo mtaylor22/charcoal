@@ -164,26 +164,39 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
 
     case 'heading': {
       const heading = node as HeadingNode
-      if (heading.level <= 2) {
-        // Render as figlet ASCII art, centered within available width
+      if (heading.level === 1) {
+        // h1: render as figlet ASCII art, centered and clipped to available width
         const block = renderFiglet(heading.content, heading.font)
         const offsetX = Math.max(0, Math.floor((width - block.width) / 2))
         for (let lineIdx = 0; lineIdx < block.lines.length; lineIdx++) {
           const line = block.lines[lineIdx]!
           for (let charIdx = 0; charIdx < line.length; charIdx++) {
+            const cellCol = col + offsetX + charIdx
+            if (cellCol < col || cellCol >= col + width) continue // clip to container
             const ch = line[charIdx]!
             if (ch === ' ') continue
             cells.push({
-              col: col + offsetX + charIdx,
+              col: cellCol,
               row: row + lineIdx,
               char: ch,
               font: '800 heading',
             })
           }
         }
+      } else if (heading.level === 2) {
+        // h2: bold uppercase monospace
+        const text = heading.content.toUpperCase()
+        for (let i = 0; i < text.length && i < width; i++) {
+          cells.push({
+            col: col + i,
+            row,
+            char: text[i]!,
+            font: '800 heading',
+          })
+        }
       } else {
         // h3: plain bold text
-        for (let i = 0; i < heading.content.length; i++) {
+        for (let i = 0; i < heading.content.length && i < width; i++) {
           cells.push({
             col: col + i,
             row,
