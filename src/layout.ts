@@ -112,8 +112,6 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
       if (hasBorder) boxHeight += 2
       boxHeight += padding * 2
       if (box.props.height != null) boxHeight = box.props.height
-      // Fill available height when valign is set (needs room to center/bottom)
-      if (box.props.valign && box.props.height == null) boxHeight = Math.max(boxHeight, availHeight - margin * 2)
 
       // Outer dimensions include margin
       return {
@@ -362,7 +360,7 @@ function resolveRootChildren(children: AstNode[], availWidth: number, availHeigh
 
 // --- Pass 2: Position Assignment ---
 
-function assignPositions(layoutNode: LayoutNode, col: number, row: number, availWidth: number): void {
+function assignPositions(layoutNode: LayoutNode, col: number, row: number, availWidth: number, availHeight?: number): void {
   const node = layoutNode.node
 
   switch (node.type) {
@@ -370,23 +368,32 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
       layoutNode.col = col
       layoutNode.row = row
       // Handle sidebar positioning for root children
-      assignRootChildPositions(layoutNode, col, row, availWidth)
+      assignRootChildPositions(layoutNode, col, row, availWidth, layoutNode.height)
       break
     }
 
     case 'box': {
       const box = node as BoxNode
       const margin = box.props.margin ?? 0
-      // Handle alignment (using outer width including margin)
+
+      // Horizontal alignment
       if (box.props.align === 'center') {
         col += Math.floor((availWidth - layoutNode.width) / 2)
       } else if (box.props.align === 'right') {
         col += availWidth - layoutNode.width
       }
-      // Offset by margin
+
+      // Vertical alignment — center/bottom the box within parent's available height
+      if (box.props.valign === 'center' && availHeight) {
+        row += Math.max(0, Math.floor((availHeight - layoutNode.height) / 2))
+      } else if (box.props.valign === 'bottom' && availHeight) {
+        row += Math.max(0, availHeight - layoutNode.height)
+      }
+
+      // Apply margin
       col += margin
       row += margin
-      layoutNode.col = col - margin  // store outer position
+      layoutNode.col = col - margin
       layoutNode.row = row - margin
 
       const hasBorder = box.props.border != null && box.props.border !== 'none'
@@ -398,20 +405,8 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
       innerRow += padding
 
       const innerWidth = layoutNode.children.length > 0 ? layoutNode.children[0]!.width : 0
-      const boxContentHeight = layoutNode.height - margin * 2
 
-      // Vertical alignment
       let cursorRow = innerRow
-      if (box.props.valign === 'center') {
-        const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
-        const innerHeight = boxContentHeight - (hasBorder ? 2 : 0) - padding * 2
-        cursorRow += Math.floor((innerHeight - contentHeight) / 2)
-      } else if (box.props.valign === 'bottom') {
-        const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
-        const innerHeight = boxContentHeight - (hasBorder ? 2 : 0) - padding * 2
-        cursorRow += innerHeight - contentHeight
-      }
-
       for (const child of layoutNode.children) {
         assignPositions(child, innerCol, cursorRow, innerWidth)
         cursorRow += child.height
@@ -451,7 +446,7 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
       // Default vertical stacking for children
       let cursorRow = row
       for (const child of layoutNode.children) {
-        assignPositions(child, col, cursorRow, availWidth)
+        assignPositions(child, col, cursorRow, availWidth, layoutNode.height)
         cursorRow += child.height
       }
       break
@@ -459,7 +454,7 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
   }
 }
 
-function assignRootChildPositions(layoutNode: LayoutNode, col: number, row: number, availWidth: number): void {
+function assignRootChildPositions(layoutNode: LayoutNode, col: number, row: number, availWidth: number, availHeight: number): void {
   // Collect sidebar info
   let leftSidebarWidth = 0
   let rightSidebarWidth = 0
@@ -487,9 +482,9 @@ function assignRootChildPositions(layoutNode: LayoutNode, col: number, row: numb
     const sbNode = sb.node as SidebarNode
     if (sbNode.props.align === 'right') {
       rightCol -= sbNode.props.width
-      assignPositions(sb, rightCol, row, sbNode.props.width)
+      assignPositions(sb, rightCol, row, sbNode.props.width, availHeight)
     } else {
-      assignPositions(sb, leftCol, row, sbNode.props.width)
+      assignPositions(sb, leftCol, row, sbNode.props.width, availHeight)
       leftCol += sbNode.props.width
     }
   }
@@ -499,7 +494,7 @@ function assignRootChildPositions(layoutNode: LayoutNode, col: number, row: numb
   const contentWidth = availWidth - leftSidebarWidth - rightSidebarWidth
   let cursorRow = row
   for (const child of nonSidebars) {
-    assignPositions(child, contentCol, cursorRow, contentWidth)
+    assignPositions(child, contentCol, cursorRow, contentWidth, availHeight)
     cursorRow += child.height
   }
 }
@@ -508,6 +503,6 @@ function assignRootChildPositions(layoutNode: LayoutNode, col: number, row: numb
 
 export function layout(ast: RootNode, cols: number, rows: number): LayoutNode {
   const tree = resolveSize(ast, cols, rows)
-  assignPositions(tree, 0, 0, cols)
+  assignPositions(tree, 0, 0, cols, rows)
   return tree
 }
