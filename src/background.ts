@@ -34,3 +34,6 @@ export function fn(callback: (col: number, row: number, time: number) => RGB): B
     teardown() {},
   }
 }
+
+export { video } from './backgrounds/video'
+export { gradient } from './backgrounds/gradient'
