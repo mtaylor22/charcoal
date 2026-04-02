@@ -60,4 +60,19 @@ row gap=2 {
       expect(box.props.font).toBe('ANSI Shadow')
     }
   })
+
+  it('parses menu block with items instead of children', () => {
+    const ast = parse('menu bind=nav {\n  - Home\n  - About\n  - Contact\n}')
+    expect(ast.children).toHaveLength(1)
+    const menu = ast.children[0]!
+    expect(menu.type).toBe('menu')
+    if (menu.type === 'menu') {
+      expect(menu.props.bind).toBe('nav')
+      expect(menu.items).toHaveLength(3)
+      expect(menu.items[0]).toEqual({ type: 'list-item', content: 'Home', segments: [] })
+      expect(menu.items[1]).toEqual({ type: 'list-item', content: 'About', segments: [] })
+      expect(menu.items[2]).toEqual({ type: 'list-item', content: 'Contact', segments: [] })
+      expect((menu as any).children).toBeUndefined()
+    }
+  })
 })

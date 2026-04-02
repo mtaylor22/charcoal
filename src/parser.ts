@@ -1,6 +1,6 @@
 // src/parser.ts
 
-import type { RootNode, AstNode, TextNode } from './ast'
+import type { RootNode, AstNode, TextNode, MenuNode, ListItemNode } from './ast'
 
 const BLOCK_NAMES = new Set(['box', 'row', 'col', 'scroll', 'sidebar', 'menu'])
 
@@ -63,18 +63,42 @@ export function parse(input: string): RootNode {
       const blockType = blockMatch[1]! as string
       const props = parseProps(blockMatch[2] ?? '')
 
-      const blockNode: AstNode & { children: AstNode[] } = {
-        type: blockType,
-        props,
-        children: [],
-      } as any
+      if (blockType === 'menu') {
+        const menuNode: MenuNode = {
+          type: 'menu',
+          props,
+          items: [],
+        }
+        current.node.children.push(menuNode)
+        // Push a wrapper so the stack works; we'll intercept children below
+        stack.push({ node: menuNode as any })
+      } else {
+        const blockNode: AstNode & { children: AstNode[] } = {
+          type: blockType,
+          props,
+          children: [],
+        } as any
 
-      current.node.children.push(blockNode)
-      stack.push({ node: blockNode })
+        current.node.children.push(blockNode)
+        stack.push({ node: blockNode })
+      }
       continue
     }
 
     // Otherwise it's inline text content
+    // If we're inside a menu block, add as list-item to items
+    if (current.node.type === 'menu') {
+      const menuNode = current.node as unknown as MenuNode
+      const content = trimmed.replace(/^-\s*/, '')
+      const item: ListItemNode = {
+        type: 'list-item',
+        content,
+        segments: [],
+      }
+      menuNode.items.push(item)
+      continue
+    }
+
     const textNode: TextNode = {
       type: 'text',
       content: trimmed,
