@@ -221,11 +221,16 @@ export class Renderer {
       if (cell.font.includes('dim')) lBoost = -0.1
       if (cell.font.includes('heading')) {
         lBoost = 0.2
-        // Shimmer: diagonal bright sweep across the heading
-        const wave = Math.sin((cell.col + cell.row * 2) * 0.06 - time * 0.0025)
-        const shimmer = Math.pow(Math.max(0, wave), 3)
-        lBoost += shimmer * 0.8
-        sBoost = -shimmer * 1.0
+        // Shimmer: diagonal sweep with bright peaks AND dark valleys
+        // Add jitter per-character so it feels organic, not synthetic
+        const jitter = Math.sin(cell.col * 7.3 + cell.row * 13.7) * 0.3 // stable per-cell noise
+        const wave = Math.sin((cell.col + cell.row * 2) * 0.06 + jitter - time * 0.0025)
+        // Bright peaks
+        const bright = Math.pow(Math.max(0, wave), 3)
+        // Dark valleys
+        const dark = Math.pow(Math.max(0, -wave), 2)
+        lBoost += bright * 0.8 - dark * 0.35
+        sBoost = -bright * 1.0 + dark * 0.3
       }
       if (cell.interactive?.hovered) lBoost += 0.1
 
