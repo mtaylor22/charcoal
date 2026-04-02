@@ -1,14 +1,23 @@
 import type { Cell } from './types'
 import type { Background } from './background'
-import { rgbToHsl, hslToCss } from './palette'
+import { rgbToHsl } from './palette'
 
 export interface RendererOptions {
   fontSize: number
   fontFamily: string
 }
 
-// Characters ordered by visual density (light to heavy)
-const DENSITY_CHARS = ' .·:;+*#@'
+// Full charset across multiple weights — matches the original video-ascii approach
+const CHARSET = ' .,:;!+-=*#@%&abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~^'
+const WEIGHTS = [400, 600, 800] as const
+
+type PaletteEntry = {
+  char: string
+  brightness: number
+  font: string
+}
+
+type LookupEntry = { char: string; font: string }
 
 export class Renderer {
   private canvas: HTMLCanvasElement
@@ -18,10 +27,86 @@ export class Renderer {
   cellH = 0
   cols = 0
   rows = 0
+  private lookup: LookupEntry[] = []
+  private paletteBuilt = false
+
+  // Brightness measurement canvas
+  private bCanvas: HTMLCanvasElement
+  private bCtx: CanvasRenderingContext2D
 
   constructor(canvas: HTMLCanvasElement, private options: RendererOptions) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')!
+    this.bCanvas = document.createElement('canvas')
+    this.bCanvas.width = 28
+    this.bCanvas.height = 28
+    this.bCtx = this.bCanvas.getContext('2d', { willReadFrequently: true })!
+  }
+
+  private estimateBrightness(ch: string, font: string): number {
+    const size = 28
+    this.bCtx.clearRect(0, 0, size, size)
+    this.bCtx.font = font
+    this.bCtx.fillStyle = '#fff'
+    this.bCtx.textBaseline = 'middle'
+    this.bCtx.fillText(ch, 1, size / 2)
+    const data = this.bCtx.getImageData(0, 0, size, size).data
+    let sum = 0
+    for (let i = 3; i < data.length; i += 4) sum += data[i]!
+    return sum / (255 * size * size)
+  }
+
+  private buildPalette(): void {
+    if (this.paletteBuilt) return
+    const fontSize = this.options.fontSize
+    const fontFamily = this.options.fontFamily
+
+    const palette: PaletteEntry[] = []
+    for (const weight of WEIGHTS) {
+      const font = `${weight} ${fontSize}px ${fontFamily}`
+      for (const ch of CHARSET) {
+        if (ch === ' ') continue
+        const brightness = this.estimateBrightness(ch, font)
+        if (brightness > 0) {
+          palette.push({ char: ch, brightness, font })
+        }
+      }
+    }
+
+    // Normalize brightness
+    const maxB = Math.max(...palette.map(e => e.brightness))
+    if (maxB > 0) for (const e of palette) e.brightness /= maxB
+    palette.sort((a, b) => a.brightness - b.brightness)
+
+    // Build 256-entry lookup table (brightness byte -> best char+font)
+    this.lookup = []
+    for (let b = 0; b < 256; b++) {
+      const targetB = b / 255
+      if (targetB < 0.02) {
+        this.lookup.push({ char: ' ', font: `400 ${fontSize}px ${fontFamily}` })
+        continue
+      }
+      // Binary search for closest brightness
+      let lo = 0, hi = palette.length - 1
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1
+        if (palette[mid]!.brightness < targetB) lo = mid + 1
+        else hi = mid
+      }
+      // Search neighborhood for best match (brightness + width fit)
+      let best = palette[lo]!
+      let bestScore = Infinity
+      const start = Math.max(0, lo - 12)
+      const end = Math.min(palette.length, lo + 12)
+      for (let i = start; i < end; i++) {
+        const e = palette[i]!
+        const bErr = Math.abs(e.brightness - targetB) * 2
+        if (bErr < bestScore) { bestScore = bErr; best = e }
+      }
+      this.lookup.push({ char: best.char, font: best.font })
+    }
+
+    this.paletteBuilt = true
   }
 
   resize(): { cols: number; rows: number } {
@@ -38,11 +123,12 @@ export class Renderer {
   }
 
   render(cells: Cell[], background: Background, time: number): void {
-    const { ctx, dpr, cols, rows, cellW, cellH } = this
+    // Build palette on first render (needs canvas context)
+    this.buildPalette()
+
+    const { ctx, dpr, cols, rows, cellW, cellH, lookup } = this
     const vw = this.canvas.width / dpr
     const vh = this.canvas.height / dpr
-    const fontSize = this.options.fontSize
-    const fontFamily = this.options.fontFamily
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.fillStyle = '#0a0a12'
@@ -60,64 +146,52 @@ export class Renderer {
       }
     }
 
-    // First pass: fill empty cells with background-colored density characters
-    ctx.font = `400 ${fontSize}px ${fontFamily}`
+    // First pass: fill empty cells with background-colored characters from palette
     for (let row = 0; row < rows; row++) {
       const y = row * cellH
       for (let col = 0; col < cols; col++) {
         if (occupied.has(`${col},${row}`)) continue
 
         const [r, g, b] = background.sample(col, row, time)
-        // Use max channel for uniform density across hues
-        const brightness = Math.max(r, g, b) / 255
-        if (brightness < 0.02) continue
-
-        // Cube curve pushes most cells toward lighter density chars
-        const b3 = brightness * brightness * brightness
-        const charIdx = Math.min(
-          DENSITY_CHARS.length - 1,
-          Math.floor(b3 * DENSITY_CHARS.length)
-        )
-        const ch = DENSITY_CHARS[charIdx]!
-        if (ch === ' ') continue
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b
+        const brightnessByte = Math.min(255, brightness | 0)
+        const entry = lookup[brightnessByte]
+        if (!entry || entry.char === ' ') continue
 
         const [h, s, l] = rgbToHsl(r, g, b)
-        const dimL = Math.min(0.25, l * 0.4 + 0.05)
-        const dimS = Math.min(1, s * 1.2)
-        ctx.fillStyle = hslToCss(h, dimS, dimL)
-        ctx.fillText(ch, col * cellW, y)
+        ctx.font = entry.font
+        ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, s * 120)}%, ${Math.min(100, (l * 1.4 + 0.15) * 100)}%)`
+        ctx.fillText(entry.char, col * cellW, y)
       }
     }
 
-    // Second pass: draw content cells (on top of background chars)
+    // Second pass: draw content cells (on top, brighter to stand out)
     for (const cell of cells) {
       if (cell.char === ' ') continue
 
       const x = cell.col * cellW
       const y = cell.row * cellH
 
-      // Sample background color at this cell
       const [r, g, b] = background.sample(cell.col, cell.row, time)
       const [h, s, l] = rgbToHsl(r, g, b)
 
-      // Determine font from cell.font marker
+      // Determine weight and brightness multiplier from cell.font marker
       let weight = '400'
       let brightnessMul = 1.0
       if (cell.font.includes('bold') || cell.font.includes('800')) weight = '800'
       else if (cell.font.includes('700')) weight = '700'
       else if (cell.font.includes('600')) weight = '600'
       if (cell.font.includes('dim')) brightnessMul = 0.5
-      if (cell.font.includes('heading')) brightnessMul = 1.5
+      if (cell.font.includes('heading')) brightnessMul = 1.8
 
-      // Hover brightening
       if (cell.interactive?.hovered) brightnessMul *= 1.3
 
-      // Content text: brighter than background chars to stand out
-      const boostedL = Math.min(0.7, l * 1.3 * brightnessMul + 0.25)
-      const boostedS = Math.min(1, s * 1.4)
+      // Use the original demo's vivid color formula, boosted for content
+      const boostedL = Math.min(1, (l * 1.8 + 0.3) * brightnessMul)
+      const boostedS = Math.min(1, s * 1.5)
 
-      ctx.font = `${weight} ${fontSize}px ${fontFamily}`
-      ctx.fillStyle = hslToCss(h, boostedS, boostedL)
+      ctx.font = `${weight} ${this.options.fontSize}px ${this.options.fontFamily}`
+      ctx.fillStyle = `hsl(${h * 360}, ${boostedS * 100}%, ${boostedL * 100}%)`
       ctx.fillText(cell.char, x, y)
     }
   }
