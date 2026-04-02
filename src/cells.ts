@@ -36,6 +36,24 @@ function wrapText(content: string, width: number): string[] {
   return lines
 }
 
+// --- Scroll state ---
+
+const scrollOffsets = new Map<LayoutNode, number>()
+export type ScrollRegion = { layoutNode: LayoutNode; top: number; bottom: number; contentHeight: number }
+let scrollRegions: ScrollRegion[] = []
+
+export function getScrollRegions(): ScrollRegion[] {
+  return scrollRegions
+}
+
+export function setScrollOffset(layoutNode: LayoutNode, offset: number): void {
+  scrollOffsets.set(layoutNode, offset)
+}
+
+export function getScrollOffset(layoutNode: LayoutNode): number {
+  return scrollOffsets.get(layoutNode) ?? 0
+}
+
 // --- Unique ID counter for buttons ---
 
 let buttonCounter = 0
@@ -299,12 +317,32 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
       break
     }
 
+    case 'scroll': {
+      // Emit children, then clip to scroll viewport and apply scroll offset
+      const scrollOffset = scrollOffsets.get(layoutNode) ?? 0
+      const childCells: Cell[] = []
+      for (const child of children) {
+        childCells.push(...emitNode(child))
+      }
+      // Shift by scroll offset and clip to scroll region
+      const scrollTop = row
+      const scrollBottom = row + height
+      for (const c of childCells) {
+        const adjustedRow = c.row - scrollOffset
+        if (adjustedRow >= scrollTop && adjustedRow < scrollBottom) {
+          cells.push({ ...c, row: adjustedRow })
+        }
+      }
+      // Track scroll region for hit testing
+      scrollRegions.push({ layoutNode, top: scrollTop, bottom: scrollBottom, contentHeight: children.reduce((s, c) => s + c.height, 0) })
+      break
+    }
+
     case 'conditional':
     case 'each':
     case 'root':
     case 'row':
     case 'col':
-    case 'scroll':
     case 'sidebar': {
       for (const child of children) {
         cells.push(...emitNode(child))
@@ -331,5 +369,6 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
 
 export function emitCells(tree: LayoutNode): Cell[] {
   resetButtonCounter()
+  scrollRegions = []
   return emitNode(tree)
 }

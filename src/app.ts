@@ -1,6 +1,6 @@
 import { parse } from './parser'
 import { layout } from './layout'
-import { emitCells } from './cells'
+import { emitCells, getScrollRegions, getScrollOffset, setScrollOffset } from './cells'
 import { Renderer } from './renderer'
 import { StateStore } from './state'
 import { InteractionManager } from './events'
@@ -116,6 +116,31 @@ export function createApp(markup: string, canvas: HTMLCanvasElement, options: Ap
     const row = Math.floor((touch.clientY - rect.top) / renderer.cellH)
     events.click(col, row)
   })
+
+  // Scroll handling
+  canvas.addEventListener('wheel', (e) => {
+    const { row } = getGridCoords(e as any)
+    const regions = getScrollRegions()
+    for (const region of regions) {
+      if (row >= region.top && row < region.bottom) {
+        const visibleHeight = region.bottom - region.top
+        const maxScroll = Math.max(0, region.contentHeight - visibleHeight)
+        const current = getScrollOffset(region.layoutNode)
+        const next = Math.max(0, Math.min(maxScroll, current + Math.sign(e.deltaY)))
+        if (next !== current) {
+          setScrollOffset(region.layoutNode, next)
+          // Re-emit cells with new scroll offset (no full relayout needed)
+          const evaluatedAst = evaluateAst(ast, state)
+          const { cols, rows } = { cols: renderer.cols, rows: renderer.rows }
+          const tree = layout(evaluatedAst, cols, rows)
+          cells = emitCells(tree)
+          events.update(cells)
+        }
+        e.preventDefault()
+        break
+      }
+    }
+  }, { passive: false })
 
   // Resize handler
   window.addEventListener('resize', () => relayout())
