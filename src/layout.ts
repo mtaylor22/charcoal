@@ -65,7 +65,7 @@ function getChildren(node: AstNode): AstNode[] {
     case 'each':
       return (node as any).children ?? []
     case 'quote':
-      return (node as QuoteNode).children ?? []
+      return (node as QuoteNode).children as AstNode[] ?? []
     case 'menu':
       return (node as MenuNode).items ?? []
     case 'list':
