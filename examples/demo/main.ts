@@ -18,7 +18,7 @@ const VIDEO_CATALOG: Record<string, string> = {
 const markup = `
 sidebar width=20 align=left {
   box valign=center padding=1 margin=1 background=dim(0.15) {
-    menu bind=currentVideo {
+    menu bind=currentBg {
       - fire
       - fireworks
       - fireworks 2
@@ -26,6 +26,9 @@ sidebar width=20 align=left {
       - lightning
       - mountains
       - parkour
+      - rainbow
+      - ocean
+      - ember
     }
   }
 }
@@ -84,7 +87,7 @@ document.fonts.ready.then(() => {
   })
 
   app.state.set('scene', 'title')
-  app.state.set('currentVideo', 'fire')
+  app.state.set('currentBg', 'fire')
 
   app.on('goToCredits', () => app.state.set('scene', 'credits'))
   app.on('goToTitle', () => app.state.set('scene', 'title'))
@@ -94,9 +97,20 @@ document.fonts.ready.then(() => {
     }
   })
 
-  app.state.watch('currentVideo', (v: string) => {
-    const src = VIDEO_CATALOG[v]
-    if (src) app.setBackground(video(src, { mode: 'cover' }))
+  const GRADIENT_CATALOG: Record<string, () => ReturnType<typeof gradient>> = {
+    rainbow: () => gradient('rainbow'),
+    ocean: () => gradient('linear', { from: '#003366', to: '#00ccff', angle: 45 }),
+    ember: () => gradient('linear', { from: '#330000', to: '#ff4400', angle: 90 }),
+  }
+
+  app.state.watch('currentBg', (v: string) => {
+    const videoSrc = VIDEO_CATALOG[v]
+    if (videoSrc) {
+      app.setBackground(video(videoSrc, { mode: 'cover' }))
+    } else {
+      const gradientFactory = GRADIENT_CATALOG[v]
+      if (gradientFactory) app.setBackground(gradientFactory())
+    }
   })
 
   app.start()

@@ -187,9 +187,9 @@ export class Renderer {
         }
 
         // Normal background cell with shimmer
-        // Subtle traveling wave of brightness
-        const shimmer = Math.sin(col * 0.15 + row * 0.08 - time * 0.0008) * 0.06 +
-                        Math.sin(col * 0.07 - row * 0.12 + time * 0.0005) * 0.04
+        // Traveling wave of brightness across the grid
+        const shimmer = Math.sin(col * 0.15 + row * 0.08 - time * 0.001) * 0.25 +
+                        Math.sin(col * 0.07 - row * 0.12 + time * 0.0007) * 0.15
         const sr = Math.max(0, Math.min(255, r + r * shimmer))
         const sg = Math.max(0, Math.min(255, g + g * shimmer))
         const sb = Math.max(0, Math.min(255, b + b * shimmer))
@@ -228,7 +228,7 @@ export class Renderer {
       if (cell.font.includes('heading')) {
         lBoost = 0.25
         // Shimmer on headings — a bright highlight that sweeps across
-        const headingShimmer = Math.pow(Math.max(0, Math.sin(cell.col * 0.12 - time * 0.0012)), 8) * 0.25
+        const headingShimmer = Math.pow(Math.max(0, Math.sin(cell.col * 0.1 - time * 0.0015)), 6) * 0.4
         lBoost += headingShimmer
       }
       if (cell.interactive?.hovered) lBoost += 0.1
