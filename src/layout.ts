@@ -96,7 +96,8 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
 
     case 'box': {
       const box = node as BoxNode
-      const boxWidth = box.props.width ?? availWidth
+      const margin = box.props.margin ?? 0
+      const boxWidth = box.props.width ?? (availWidth - margin * 2)
       const hasBorder = box.props.border != null && box.props.border !== 'none'
       const padding = box.props.padding ?? 0
       let innerWidth = boxWidth
@@ -104,7 +105,7 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
       innerWidth -= padding * 2
 
       const boxFigletFont = (box.props.font as string) ?? figletFont
-      const children = box.children.map(c => resolveSize(c, innerWidth, availHeight, undefined, undefined, undefined, boxFigletFont))
+      const children = box.children.map(c => resolveSize(c, innerWidth, availHeight - margin * 2, undefined, undefined, undefined, boxFigletFont))
       const childrenHeight = children.reduce((sum, c) => sum + c.height, 0)
 
       let boxHeight = childrenHeight
@@ -112,14 +113,15 @@ function resolveSize(node: AstNode, availWidth: number, availHeight: number, par
       boxHeight += padding * 2
       if (box.props.height != null) boxHeight = box.props.height
       // Fill available height when valign is set (needs room to center/bottom)
-      if (box.props.valign && box.props.height == null) boxHeight = Math.max(boxHeight, availHeight)
+      if (box.props.valign && box.props.height == null) boxHeight = Math.max(boxHeight, availHeight - margin * 2)
 
+      // Outer dimensions include margin
       return {
         node,
         col: 0,
         row: 0,
-        width: boxWidth,
-        height: boxHeight,
+        width: boxWidth + margin * 2,
+        height: boxHeight + margin * 2,
         children,
       }
     }
@@ -374,14 +376,18 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
 
     case 'box': {
       const box = node as BoxNode
-      // Handle alignment
+      const margin = box.props.margin ?? 0
+      // Handle alignment (using outer width including margin)
       if (box.props.align === 'center') {
         col += Math.floor((availWidth - layoutNode.width) / 2)
       } else if (box.props.align === 'right') {
         col += availWidth - layoutNode.width
       }
-      layoutNode.col = col
-      layoutNode.row = row
+      // Offset by margin
+      col += margin
+      row += margin
+      layoutNode.col = col - margin  // store outer position
+      layoutNode.row = row - margin
 
       const hasBorder = box.props.border != null && box.props.border !== 'none'
       const padding = box.props.padding ?? 0
@@ -392,16 +398,17 @@ function assignPositions(layoutNode: LayoutNode, col: number, row: number, avail
       innerRow += padding
 
       const innerWidth = layoutNode.children.length > 0 ? layoutNode.children[0]!.width : 0
+      const boxContentHeight = layoutNode.height - margin * 2
 
       // Vertical alignment
       let cursorRow = innerRow
       if (box.props.valign === 'center') {
         const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
-        const innerHeight = layoutNode.height - (hasBorder ? 2 : 0) - padding * 2
+        const innerHeight = boxContentHeight - (hasBorder ? 2 : 0) - padding * 2
         cursorRow += Math.floor((innerHeight - contentHeight) / 2)
       } else if (box.props.valign === 'bottom') {
         const contentHeight = layoutNode.children.reduce((sum, c) => sum + c.height, 0)
-        const innerHeight = layoutNode.height - (hasBorder ? 2 : 0) - padding * 2
+        const innerHeight = boxContentHeight - (hasBorder ? 2 : 0) - padding * 2
         cursorRow += innerHeight - contentHeight
       }
 

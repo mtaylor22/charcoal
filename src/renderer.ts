@@ -144,21 +144,49 @@ export class Renderer {
     // Update background (e.g., sample new video frame)
     background.update?.(time, cols, rows)
 
-    // Build a set of occupied cells for quick lookup
+    // Build lookup maps from cells
     const occupied = new Set<string>()
+    const dimMap = new Map<string, number>() // "col,row" -> dim amount
     for (const cell of cells) {
-      if (cell.char !== ' ') {
+      if (cell.bgModifier?.type === 'dim') {
+        const key = `${cell.col},${cell.row}`
+        dimMap.set(key, cell.bgModifier.amount)
+      } else if (cell.char !== ' ') {
         occupied.add(`${cell.col},${cell.row}`)
       }
     }
 
-    // First pass: fill empty cells with background-colored characters from palette
+    // First pass: fill cells with background-colored characters from palette
+    // Apply dim modifier where containers overlap
     for (let row = 0; row < rows; row++) {
       const y = row * cellH
       for (let col = 0; col < cols; col++) {
-        if (occupied.has(`${col},${row}`)) continue
+        const key = `${col},${row}`
+        const dimAmount = dimMap.get(key)
+
+        // Skip cells that have content (they'll be drawn in pass 2)
+        if (occupied.has(key) && dimAmount === undefined) continue
 
         const [r, g, b] = background.sample(col, row, time)
+
+        if (dimAmount !== undefined) {
+          // Dimmed container region — render with reduced brightness
+          const dimR = r * dimAmount
+          const dimG = g * dimAmount
+          const dimB = b * dimAmount
+          const brightness = 0.299 * dimR + 0.587 * dimG + 0.114 * dimB
+          const brightnessByte = Math.min(255, brightness | 0)
+          const entry = lookup[brightnessByte]
+          if (entry && entry.char !== ' ') {
+            const [h, s, l] = rgbToHsl(dimR, dimG, dimB)
+            ctx.font = entry.font
+            ctx.fillStyle = `hsl(${h * 360}, ${Math.min(100, s * 120)}%, ${Math.min(100, (l * 1.4 + 0.15) * 100)}%)`
+            ctx.fillText(entry.char, col * cellW, y)
+          }
+          continue
+        }
+
+        // Normal background cell
         const brightness = 0.299 * r + 0.587 * g + 0.114 * b
         const brightnessByte = Math.min(255, brightness | 0)
         const entry = lookup[brightnessByte]

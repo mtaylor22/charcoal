@@ -302,6 +302,35 @@ function emitNode(layoutNode: LayoutNode): Cell[] {
 
     case 'box': {
       const box = node as BoxNode
+      const margin = (box.props.margin as number) ?? 0
+
+      // Inner box position/size (excluding margin)
+      const innerBoxCol = col + margin
+      const innerBoxRow = row + margin
+      const innerBoxW = width - margin * 2
+      const innerBoxH = height - margin * 2
+
+      // Emit background fill cells if box has a background modifier
+      const bgStr = box.props.background as string | undefined
+      if (bgStr) {
+        const dimMatch = bgStr.match(/^dim\(([0-9.]+)\)$/)
+        if (dimMatch) {
+          const amount = parseFloat(dimMatch[1]!)
+          const bgMod = { type: 'dim' as const, amount }
+          for (let r = 0; r < innerBoxH; r++) {
+            for (let c = 0; c < innerBoxW; c++) {
+              cells.push({
+                col: innerBoxCol + c,
+                row: innerBoxRow + r,
+                char: ' ',
+                font: '400 bg-fill',
+                bgModifier: bgMod,
+              })
+            }
+          }
+        }
+      }
+
       const hasBorder = box.props.border != null && box.props.border !== 'none'
       if (hasBorder) {
         // Top row

@@ -16,20 +16,22 @@ const VIDEO_CATALOG: Record<string, string> = {
 }
 
 const markup = `
-sidebar width=15 align=left {
-  menu bind=currentVideo {
-    - fire
-    - fireworks
-    - fireworks 2
-    - ink
-    - lightning
-    - mountains
-    - parkour
+sidebar width=20 align=left {
+  box valign=center padding=1 margin=1 background=dim(0.15) {
+    menu bind=currentVideo {
+      - fire
+      - fireworks
+      - fireworks 2
+      - ink
+      - lightning
+      - mountains
+      - parkour
+    }
   }
 }
 
 {#if scene == "title"}
-  box align=center valign=center {
+  box align=center valign=center padding=2 background=dim(0.25) {
     # CHARCOAL
 
     ---
@@ -45,7 +47,7 @@ sidebar width=15 align=left {
 {/if}
 
 {#if scene == "zen"}
-  box border=single align=center valign=center width=60 background=dim(0.2) {
+  box align=center valign=center width=60 padding=2 background=dim(0.15) {
     ## The Zen of Python, by Tim Peters
 
     ---
@@ -74,7 +76,7 @@ sidebar width=15 align=left {
 {/if}
 
 {#if scene == "scroll"}
-  box align=center valign=center width=45 {
+  box align=center valign=center width=45 padding=2 background=dim(0.15) {
     ## Scrollable Pane
 
     ---

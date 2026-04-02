@@ -10,4 +10,9 @@ export type Cell = {
     action: string
     hovered: boolean
   }
+  // Background modifier for this cell's region (e.g., dim(0.3))
+  bgModifier?: {
+    type: 'dim'
+    amount: number
+  }
 }

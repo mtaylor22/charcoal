@@ -67,6 +67,7 @@ export type BoxNode = {
     width?: number
     height?: number
     padding?: number
+    margin?: number
     background?: string
     font?: string
     valign?: 'top' | 'center' | 'bottom'
