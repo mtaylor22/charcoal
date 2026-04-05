@@ -1,14 +1,16 @@
 {
   "name": "charcoal",
   "version": "1.0.0",
-  "description": "",
+  "description": "Render .coal markup to a character grid on canvas. Backgrounds become ASCII art. Text becomes UI.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc"
+    "build": "tsc",
+    "demo": "cd examples/demo && npx vite",
+    "demo:build": "cd examples/demo && npx vite build && cp public/*.mp4 ../../docs/ 2>/dev/null || true"
   },
   "keywords": [],
   "author": "",
