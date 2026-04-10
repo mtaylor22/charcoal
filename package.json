@@ -12,9 +12,26 @@
     "demo": "cd examples/demo && npx vite",
     "demo:build": "cd examples/demo && npx vite build && cp public/*.mp4 ../../docs/ 2>/dev/null || true"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "canvas",
+    "ascii",
+    "ascii-art",
+    "text-ui",
+    "terminal-ui",
+    "markup",
+    "figlet",
+    "dsl"
+  ],
+  "author": "Mitchell Taylor",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mtaylor22/charcoal.git"
+  },
+  "homepage": "https://mtaylor22.github.io/charcoal/",
+  "bugs": {
+    "url": "https://github.com/mtaylor22/charcoal/issues"
+  },
   "devDependencies": {
     "@types/figlet": "^1.7.0",
     "@types/node": "^25.5.0",
